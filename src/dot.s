@@ -35,7 +35,7 @@ dot:
     j loop_in
 
 loop_start:
-    bge t0,a2,after_loop
+    bge t0,a2,loop_end
 
 loop_in:
     mul t6, t0, t1 # i * 4
@@ -54,7 +54,7 @@ continue:
     addi t0, t0, 1 #increment i
     j loop_start
 
-after_loop:
+loop_end:
     addi a0, a7,0 # return a7
     ret # end
 
