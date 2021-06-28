@@ -21,47 +21,90 @@
 dot:
 
     # Prologue
-    li t0, 1
-    blt a2,t0, exit_5
+    addi sp, sp, -48
 
-    blt a3,t0,exit_6
-    blt a4,t0,exit_6
+    sw ra, 0(sp)
+    sw s0, 4(sp)
+    sw s1, 8(sp)
+    sw s2, 12(sp)
+    sw s3, 16(sp)
+    sw s4, 20(sp)
+    sw s5, 24(sp)
+    sw s6, 28(sp)
+    sw s7, 32(sp)
+    sw s8, 36(sp)
+    sw s9, 40(sp)
+    sw s10, 44(sp)
+
     
-    li a7, 0# final dot product result
+    li s5, 1
+    blt a2,s5, exit_5
 
-    li t0, 0 #set i=0
-    addi t1,x0, 4 # 4-byte offset for i
+    blt a3,s5,exit_6
+    blt a4,s5,exit_6
+    
+    mv s0 a0
+    mv s1 a1
+    mv s2 a2
+    mv s3 a3
+    mv s4 a4
+
+
+
+    li s5, 0 #set i=0
+    li s6, 0# final dot product result
+
 
     j loop_in
 
+
 loop_start:
-    bge t0,a2,loop_end
+    bge s5,a2,loop_end
 
 loop_in:
-    mul t6, t0, t1 # i * 4
-    
-    add t4, a0, t6 # address for a[i]
-    lw t5, 0(t4) # load  a[i]
+    addi t0,x0, 4 # 4-byte offset for i
+    mul t0, s5, t0 # i * 4
+    mul t0, t0, s3 # stride for a
 
-    add t2, a1, t6 # address for b[i]
-    lw t3, 0(t2) # load  b[i]
+    add t0, a0, t0 # address for a[i]
+    lw t5, 0(t0) # load  a[i]
 
-    mul  s1, t3, t5  # a3=a0[i]
-    add a7, a7,s1  # res=i
+    addi t0,x0, 4 # 4-byte offset for i
+    mul t0, s5, t0 # i * 4
+    mul t0, t0, s4 # stride for b
+
+
+    add t0, a1, t0 # address for b[i]
+    lw t3, 0(t0) # load  b[i]
+
+    mul  t0, t3, t5  # a3=a0[i]
+    add s6, s6,t0  # res=i
 
 
 continue:
-    addi t0, t0, 1 #increment i
+    add s5, s5, a3 #increment i by stride a3 or a4
     j loop_start
 
 loop_end:
-    addi a0, a7,0 # return a7
+    addi a0, s6,0 # return s6
+
+        # Epilogue
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw s1, 8(sp)
+    lw s2, 12(sp)
+    lw s3, 16(sp)
+    lw s4, 20(sp)
+    lw s5, 24(sp)
+    lw s6, 28(sp)
+    lw s7, 32(sp)
+    lw s8, 36(sp)
+    lw s9, 40(sp)
+    lw s10, 44(sp)
+
+    addi sp, sp, 48 
+
     ret # end
-
-
-
-
-
 
 exit_5:
     addi a0, x0, 17

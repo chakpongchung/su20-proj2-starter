@@ -1,47 +1,152 @@
-# .import ../../src/dot.s
+# .import ../../src/matmul.s
 # .import ../../src/utils.s
+# .import ../../src/dot.s
 
-# Set vector values for testing
+# static values for testing
 .data
-# vector0: .word 1 2 3 4 5 6 7 8 9
-# vector1: .word 1 2 3 4 5 6 7 8 9
-vector0: .word 1 2 3 
-vector1: .word 1 2 3
+m0: .word 1 2 3 4 5 6 7 8 9
+m1: .word 1 2 3 4 5 6 7 8 9
+# m0: .word 1 1 1 1 1 1 1 1 1 
+# m1: .word 1 1 1 1 1 1 1 1 1
+d: .word 0 0 0 0 0 0 0 0 0 # allocate static space for output
 
 .text
-# main function for testing
 main:
-    # Load vector addresses into registers
-    la s0 vector0
-    la s1 vector1
+    # Load addresses of input matrices (which are in static memory), and set their dimensions
+    
 
-    # Set vector attributes
-    addi s2 x0 3
+    la a0, m0
+    la a3, m1
+    li a1, 3
+    li a2, 3
+    li a4, 3
+    li a5, 3
+    la a6, d
 
-    addi s3 x0 1
-    addi s4 x0 1
 
-    mv a0 s0
-    mv a1 s1
+    # Call matrix multiply, m0 * m1
+    jal ra, matmul
 
-    mv a2 s2
 
-    mv a3 s3
-    mv a4 s4
+    # Print the output (use print_int_array in utils.s)
+
+    mv a0, a6
+    li a1, 3
+    li a2, 3
+    jal print_int_array
+
+
+
+    # Exit the program
+    jal exit
+
+
+.globl matmul
+
+.text
+
+matmul:
+    # Error checks
+    # Prologue
+    addi sp, sp, -48
+
+    sw ra, 0(sp)
+    sw s0, 4(sp)
+    sw s1, 8(sp)
+    sw s2, 12(sp)
+    sw s3, 16(sp)
+    sw s4, 20(sp)
+    sw s5, 24(sp)
+    sw s6, 28(sp)
+    sw s7, 32(sp)
+    sw s8, 36(sp)
+    sw s9, 40(sp)
+    sw s10, 44(sp)
+
+    # Error checks
+    # Prologue
+    mv s0 a0
+    mv s1 a1 
+    mv s2 a2
+
+    mv s3 a3
+    mv s4 a4 
+    mv s5 a5 
+
+    mv s6 a6
+
+    addi s7 x0 0 #   for i
+    addi s8 x0 0 #   for j
+    li   s9,0  #     index of d
+
+
+outer_loop_start:
+
+    bge s7 s1 outer_loop_end
+    addi s8 x0 0 #   for j
+
+
+inner_loop_start:
+
+    bge s8 s5 outer_loop_start
+
+#prepare argument for dot
+# n0*i
+    mul t0 s2 s7
+    addi t1 x0 4  
+    mul t0 t0 t1 
+#for mat0 offset
+    add a0 s0 t0 
+# 1*j
+    addi t0 x0 4  
+    mul t0 s8 t0
+#for mat1 offset
+    add a1 s3 t0
+#   a2 (int)  is the length of the vectors
+    add a2 s2 x0
+
+    addi a3 x0 1
+    add a4 x0 s5
 
     # Call dot function
     jal ra dot
 
-    # Print integer result
-    mv a1 a0
-    jal ra print_int
+# save result from dot to d
+    # li t0 4
+    addi t0 x0 4 # why t0 is not 4??
+    mul t0 t0 s9 
+    add t0 s6 t0  # new address for d ,saved in a6
+    sw a0 0(t0)
 
-    # Print newline
-    li a1 '\n'
-    jal ra print_char
+inner_loop_end:
 
-    # Exit
-    jal exit
+    addi s8 s8 1 #j
+    addi s9 s9 1 #k for d
+
+    blt  s8 s5 inner_loop_start
+
+outer_loop_end:
+
+    addi s7 s7 1
+    blt s7 s1 outer_loop_start
+
+        # Epilogue
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw s1, 8(sp)
+    lw s2, 12(sp)
+    lw s3, 16(sp)
+    lw s4, 20(sp)
+    lw s5, 24(sp)
+    lw s6, 28(sp)
+    lw s7, 32(sp)
+    lw s8, 36(sp)
+    lw s9, 40(sp)
+    lw s10, 44(sp)
+
+    addi sp, sp, 48 
+    
+    ret
 
 
 .globl dot
@@ -194,7 +299,7 @@ error_string: .string "This library file should not be directly called!"
 #     jal print_str
 #     li a1 1
 #     jal exit2
-# # End main
+# End main
 
 
 #================================================================
@@ -490,16 +595,16 @@ print_int_array:
     # Set outer loop index
     li s3 0
 
-outer_loop_start:
+outer_loop_start1:
     # Check outer loop condition
-    beq s3 s1 outer_loop_end
+    beq s3 s1 outer_loop_end1
 
     # Set inner loop index
     li s4 0
 
-inner_loop_start:
+inner_loop_start1:
     # Check inner loop condition
-    beq s4 s2 inner_loop_end
+    beq s4 s2 inner_loop_end1
 
     # t0 = row index * len(row) + column index
     mul t0 s2 s3 
@@ -520,17 +625,17 @@ inner_loop_start:
     
 
     addi s4 s4 1
-    j inner_loop_start
+    j inner_loop_start1
 
-inner_loop_end:
+inner_loop_end1:
     # Print newline
     li a1 '\n'
     jal print_char
 
     addi s3 s3 1
-    j outer_loop_start
+    j outer_loop_start1
 
-outer_loop_end:
+outer_loop_end1:
     # Epilogue
     lw s0 0(sp)
     lw s1 4(sp)
